@@ -1,12 +1,22 @@
 package assign3;
 
 import java.util.*;
+//import  javafx.util.*;
+
 
 /*
  * Encapsulates a Sudoku grid to be solved.
  * CS108 Stanford.
  */
 public class Sudoku {
+	
+	public static class Pair {
+        public int x;
+        public int y;
+    }
+	private int[][] sudo;
+	private long timer;
+	
 	// Provided grid data for main/testing
 	// The instance variable strategy is up to you.
 	
@@ -142,7 +152,7 @@ public class Sudoku {
 	 * Sets up based on the given ints.
 	 */
 	public Sudoku(int[][] ints) {
-		// YOUR CODE HERE
+		sudo = ints;
 	}
 	
 	
@@ -151,15 +161,52 @@ public class Sudoku {
 	 * Solves the puzzle, invoking the underlying recursive search.
 	 */
 	public int solve() {
-		return 0; // YOUR CODE HERE
+		timer = -System.currentTimeMillis();
+		int n_ways = solveSudoku();
+		timer += System.currentTimeMillis();
+		return n_ways; // YOUR CODE HERE
 	}
 	
+	private int solveSudoku() {
+		return 0;
+	}
+	
+	private Pair getBest() {
+		Pair p = new Pair();
+		int c = 0;
+		for(int i = 0; i < 9; i++) {
+			int lc = 0;
+			for(int j = 0; j < 9; j++) {
+				if(sudo[i][j] != 0) lc++;
+			}
+			if(c < lc) {
+				p.x = i;
+				p.y = -1;
+			}
+		}
+		for(int i = 0; i < 9; i++) {
+			int lc = 0;
+			for(int j = 0; j < 9; j++) {
+				if(sudo[j][i] != 0) lc++;
+			}
+			if(c < lc) {
+				p.x = -1;
+				
+				p.y = i;
+			}
+		}
+		return p;
+	}
+
+
 	public String getSolutionText() {
-		return ""; // YOUR CODE HERE
+		String s = "";
+		for(int i = 0; i < 9; i++) s += sudo[i].toString() + '\n';
+		return s; // YOUR CODE HERE
 	}
 	
 	public long getElapsed() {
-		return 0; // YOUR CODE HERE
+		return timer; // YOUR CODE HERE
 	}
 
 }
