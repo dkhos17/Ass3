@@ -1,6 +1,8 @@
 package assign3;
 
 import java.util.*;
+
+import assign3.Sudoku.Pair;
 //import  javafx.util.*;
 
 
@@ -11,17 +13,23 @@ import java.util.*;
 public class Sudoku {
 	
 	public static class Pair {
-        public int x;
-        public int y;
+        public int x,y,v;
+        Pair(int x, int y, int v){
+        	this.x = x; this.y = y; this.v = v;
+        }
     }
-	private int[][] sudo;
+	private int[][] sudo, sol;
 	private long timer;
+	private List<Pair> points; 
+	private int filled, total_ways;
+	private static int[][] empty;
 	
 	// Provided grid data for main/testing
 	// The instance variable strategy is up to you.
 	
 	// Provided easy 1 6 grid
 	// (can paste this text into the GUI too)
+	
 	public static final int[][] easyGrid = Sudoku.stringsToGrid(
 	"1 6 4 0 0 0 0 0 2",
 	"2 0 0 4 0 3 9 1 0",
@@ -59,10 +67,23 @@ public class Sudoku {
 	"0 0 0 5 3 0 9 0 0",
 	"0 3 0 0 0 0 0 5 1");
 	
+	//evil grid with one solution
+	public static final int[][] evilGrid = Sudoku.stringsToGrid(
+			"0 0 0 0 1 0 0 0 6",
+			"5 9 7 0 0 0 0 0 0",
+			"2 0 0 5 8 0 0 0 0",
+			"0 8 0 0 0 0 9 0 0",
+			"4 0 0 7 0 3 0 0 1",
+			"0 0 2 0 0 0 0 7 0",
+			"0 0 0 0 4 9 0 0 2",
+			"0 0 0 0 0 0 3 1 5",
+			"1 0 0 0 2 0 0 0 0");
+	
 	
 	public static final int SIZE = 9;  // size of the whole 9x9 puzzle
 	public static final int PART = 3;  // size of each 3x3 part
 	public static final int MAX_SOLUTIONS = 100;
+
 	
 	// Provided various static utility methods to
 	// convert data formats to int[][] grid.
@@ -146,13 +167,39 @@ public class Sudoku {
 	}
 	
 	
-	
 
 	/**
 	 * Sets up based on the given ints.
 	 */
 	public Sudoku(int[][] ints) {
 		sudo = ints;
+		sol = new int[SIZE][SIZE];
+		total_ways = filled = 0;
+		points = new ArrayList<Pair>();
+		getPoints();
+	}
+	
+	//get unfilled points
+	private void getPoints() {
+		for(int i = 0; i < SIZE; i++) {
+			for(int j = 0; j < SIZE; j++) {
+				if(sudo[i][j] != 0) {
+					filled++;  continue;
+				}
+				Pair p = new Pair(i,j,0);
+				for(int v = 1; v < 10; v++) 
+					if(canBe(i, j, v)) p.v++;
+				if(p.v != 0) points.add(p);
+			}
+		}
+		Collections.sort(points,new Comparator<Pair>() {
+			@Override
+			public int compare(Pair o1, Pair o2) {
+				if(o1.v != o2.v) return o1.v - o2.v;
+				if(o1.x != o2.x) return o1.x - o2.x;
+				return o1.y - o2.y;
+			}
+		} );
 	}
 	
 	
@@ -161,52 +208,71 @@ public class Sudoku {
 	 * Solves the puzzle, invoking the underlying recursive search.
 	 */
 	public int solve() {
+		if(filled + points.size() != SIZE*SIZE) return 0;
 		timer = -System.currentTimeMillis();
-		int n_ways = solveSudoku();
+		solveSudoku(0);
 		timer += System.currentTimeMillis();
-		return n_ways; // YOUR CODE HERE
+		return total_ways;
 	}
 	
-	private int solveSudoku() {
-		return 0;
+	private void solveSudoku(int idx) {
+		if(total_ways >= MAX_SOLUTIONS) return;
+		if(filled == SIZE*SIZE) {
+			if(total_ways == 0) copySolution();
+			total_ways++;  return;
+		}
+		Pair bst = points.get(idx); 
+		for(int v = 1; v < 10; v++) {
+			if(canBe(bst.x, bst.y, v)) {
+				sudo[bst.x][bst.y] = v;
+				filled++;
+				solveSudoku(idx+1);
+				sudo[bst.x][bst.y] = 0;
+				--filled;
+			}
+		}	
 	}
 	
-	private Pair getBest() {
-		Pair p = new Pair();
-		int c = 0;
-		for(int i = 0; i < 9; i++) {
-			int lc = 0;
-			for(int j = 0; j < 9; j++) {
-				if(sudo[i][j] != 0) lc++;
-			}
-			if(c < lc) {
-				p.x = i;
-				p.y = -1;
+	private void copySolution() {
+		for(int i = 0; i < SIZE; i++) {
+			for(int j = 0; j < SIZE; j++) {
+				sol[i][j] = sudo[i][j];
 			}
 		}
-		for(int i = 0; i < 9; i++) {
-			int lc = 0;
-			for(int j = 0; j < 9; j++) {
-				if(sudo[j][i] != 0) lc++;
-			}
-			if(c < lc) {
-				p.x = -1;
-				
-				p.y = i;
-			}
-		}
-		return p;
 	}
+
+
+	private boolean canBe(int x, int y, int val) {
+		if(sudo[x][y] != 0) return false;
+		for(int i = 0; i < SIZE; i++) {
+			if(sudo[x][i] == val) return false;
+			if(sudo[i][y] == val) return false;
+ 		}
+		for(int i = x - x%PART; i < x - x%3 + PART; i++) {
+			for(int j = y - y%PART; j < y - y%3 + PART; j++) {
+				if(sudo[i][j] == val) return false;
+			}
+		}
+		return true;
+	}
+	
 
 
 	public String getSolutionText() {
+		if(total_ways == 0) return "There is no solution";
 		String s = "";
-		for(int i = 0; i < 9; i++) s += sudo[i].toString() + '\n';
-		return s; // YOUR CODE HERE
+		for(int i = 0; i < SIZE; i++) s += Arrays.toString(sol[i]) + '\n';
+		return s;
+	}
+	
+	public String toString() {
+		String s = "";
+		for(int i = 0; i < SIZE; i++) s += Arrays.toString(sudo[i]) + '\n';
+		return s;
 	}
 	
 	public long getElapsed() {
-		return timer; // YOUR CODE HERE
+		return timer;
 	}
-
+	
 }
