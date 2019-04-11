@@ -2,7 +2,7 @@ package assign3;
 
 import java.util.*;
 
-import assign3.Sudoku.Pair;
+import assign3.Sudoku.Triple;
 //import  javafx.util.*;
 
 
@@ -12,17 +12,16 @@ import assign3.Sudoku.Pair;
  */
 public class Sudoku {
 	
-	public static class Pair {
+	public static class Triple {
         public int x,y,v;
-        Pair(int x, int y, int v){
+        Triple(int x, int y, int v){
         	this.x = x; this.y = y; this.v = v;
         }
     }
 	private int[][] sudo, sol;
 	private long timer;
-	private List<Pair> points; 
+	private List<Triple> points; 
 	private int filled, total_ways;
-	private static int[][] empty;
 	
 	// Provided grid data for main/testing
 	// The instance variable strategy is up to you.
@@ -52,7 +51,7 @@ public class Sudoku {
 	 "700020006",
 	 "060000280",
 	 "000419005",
-	 "000080079");
+	 "000080089");
 	
 	// Provided hard 3 7 grid
 	// 1 solution this way, 6 solutions if the 7 is changed to 0
@@ -157,7 +156,7 @@ public class Sudoku {
 	// solving hardGrid.
 	public static void main(String[] args) {
 		Sudoku sudoku;
-		sudoku = new Sudoku(hardGrid);
+		sudoku = new Sudoku(mediumGrid);
 		
 		System.out.println(sudoku); // print the raw problem
 		int count = sudoku.solve();
@@ -175,35 +174,61 @@ public class Sudoku {
 		sudo = ints;
 		sol = new int[SIZE][SIZE];
 		total_ways = filled = 0;
-		points = new ArrayList<Pair>();
+		points = new ArrayList<Triple>();
 		getPoints();
 	}
 	
-	//get unfilled points
-	private void getPoints() {
-		for(int i = 0; i < SIZE; i++) {
-			for(int j = 0; j < SIZE; j++) {
-				if(sudo[i][j] != 0) {
-					filled++;  continue;
-				}
-				Pair p = new Pair(i,j,0);
-				for(int v = 1; v < 10; v++) 
-					if(canBe(i, j, v)) p.v++;
-				if(p.v != 0) points.add(p);
-			}
-		}
-		Collections.sort(points,new Comparator<Pair>() {
-			@Override
-			public int compare(Pair o1, Pair o2) {
-				if(o1.v != o2.v) return o1.v - o2.v;
-				if(o1.x != o2.x) return o1.x - o2.x;
-				return o1.y - o2.y;
-			}
-		} );
+	public Sudoku(String ints) {
+		this(textToGrid(ints));
 	}
 	
 	
+	//get unfilled points
+	private void getPoints() {
+		try {
+			for(int i = 0; i < SIZE; i++) {
+				for(int j = 0; j < SIZE; j++) {
+					if(sudo[i][j] != 0) {
+						if(!isCorr(i, j, sudo[i][j]))
+							throw new RuntimeException ("Invalid Puzzle!");
+						filled++;  continue;
+					}
+					Triple p = new Triple(i,j,0);
+					for(int v = 1; v < 10; v++) 
+						if(canBe(i, j, v)) p.v++;
+					if(p.v != 0) points.add(p);
+				}
+			}
+			Collections.sort(points,new Comparator<Triple>() {
+				@Override
+				public int compare(Triple o1, Triple o2) {
+					if(o1.v != o2.v) return o1.v - o2.v;
+					if(o1.x != o2.x) return o1.x - o2.x;
+					return o1.y - o2.y;
+				}
+			} );
+		} catch (Exception e) {
+			throw new RuntimeException ("Invalid Puzzle!");
+		}
+	}
 	
+	
+	//check (i,j) is correct or not
+	private boolean isCorr(int x, int y, int val) {
+		for(int i = 0; i < SIZE; i++) {
+			if(i != y && sudo[x][i] == val) return false;
+			if(i != x && sudo[i][y] == val) return false;
+		}
+		for(int i = PART*(x/PART); i < PART*(x/PART) + PART; i++) {
+			for(int j = PART*(y/PART); j < PART*(y/PART) + PART; j++) {
+				if(i == x && j == y) continue;
+				if(sudo[i][j] == val) return false;
+			}
+		}
+		return true;
+	}
+
+
 	/**
 	 * Solves the puzzle, invoking the underlying recursive search.
 	 */
@@ -221,7 +246,7 @@ public class Sudoku {
 			if(total_ways == 0) copySolution();
 			total_ways++;  return;
 		}
-		Pair bst = points.get(idx); 
+		Triple bst = points.get(idx); 
 		for(int v = 1; v < 10; v++) {
 			if(canBe(bst.x, bst.y, v)) {
 				sudo[bst.x][bst.y] = v;
@@ -233,6 +258,7 @@ public class Sudoku {
 		}	
 	}
 	
+	//copy the solution, get first solution
 	private void copySolution() {
 		for(int i = 0; i < SIZE; i++) {
 			for(int j = 0; j < SIZE; j++) {
@@ -241,15 +267,15 @@ public class Sudoku {
 		}
 	}
 
-
+	//check val if it can be placed in (i,j)  
 	private boolean canBe(int x, int y, int val) {
 		if(sudo[x][y] != 0) return false;
 		for(int i = 0; i < SIZE; i++) {
 			if(sudo[x][i] == val) return false;
 			if(sudo[i][y] == val) return false;
  		}
-		for(int i = x - x%PART; i < x - x%3 + PART; i++) {
-			for(int j = y - y%PART; j < y - y%3 + PART; j++) {
+		for(int i = PART*(x/PART); i < PART*(x/PART) + PART; i++) {
+			for(int j = PART*(y/PART); j < PART*(y/PART) + PART; j++) {
 				if(sudo[i][j] == val) return false;
 			}
 		}
@@ -257,9 +283,8 @@ public class Sudoku {
 	}
 	
 
-
+	
 	public String getSolutionText() {
-		if(total_ways == 0) return "There is no solution";
 		String s = "";
 		for(int i = 0; i < SIZE; i++) s += Arrays.toString(sol[i]) + '\n';
 		return s;
