@@ -8,9 +8,10 @@ package assign3;
  */
 public class MyDBInfo {
 	
-	public static final String MYSQL_USERNAME = "ccs108yourStudentID";
-	public static final String MYSQL_PASSWORD = "";
-	public static final String MYSQL_DATABASE_SERVER = "mysql-user.stanford.edu";
-	public static final String MYSQL_DATABASE_NAME = "c_cs108_yourStudentID";
+	public static final String MYSQL_USERNAME = "root";
+	public static final String MYSQL_PASSWORD = "Devi0406";
+	public static final String MYSQL_DATABASE_SERVER = "localhost:3306/"
+			+ "metropolises?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
+	public static final String MYSQL_DATABASE_NAME = "metropolises";
 
 }

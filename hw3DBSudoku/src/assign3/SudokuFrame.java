@@ -11,7 +11,7 @@ import java.awt.event.*;
 
  public class SudokuFrame extends JFrame {
 	
-	 private static int Width = 1200, Height = 1000;
+//	 private static int Width = 1200, Height = 1000;
 	 private JTextArea puzzText, solText; 
 	 private JCheckBox AutoCheck;
 	 private JButton Check;
@@ -87,14 +87,14 @@ import java.awt.event.*;
 	
 	private void SudokuSolution() {
 		try {
-			Sudoku sudo = new Sudoku(puzzText.getText());
 			solText.setText("Loading...");
+			Sudoku sudo = new Sudoku(puzzText.getText());
 			int count = sudo.solve();
 			String solution = sudo.getSolutionText();
 			solution += "solution: " + count + '\n';
 			solution += "elapsed: " + sudo.getElapsed() + "ms";
 			solText.setText(solution);
-		} catch (Exception e) {}
+		} catch (Exception e) {}//throw e;
 	}
 	
 	

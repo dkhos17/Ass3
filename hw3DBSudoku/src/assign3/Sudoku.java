@@ -14,14 +14,23 @@ public class Sudoku {
 	
 	public static class Triple {
         public int x,y,v;
-        Triple(int x, int y, int v){
-        	this.x = x; this.y = y; this.v = v;
+        Triple(int x, int y, int value){
+        	this.x = x; this.y = y; this.v = value;
         }
     }
+	public class SortByValue implements Comparator<Triple> {
+			@Override
+			public int compare(Triple o1, Triple o2) {
+				if(o1.v != o2.v) return o1.v - o2.v;
+				if(o1.x != o2.x) return o1.x - o2.x;
+				return o1.y - o2.y;
+			}
+     }
+	
 	private int[][] sudo, sol;
-	private long timer;
-	private List<Triple> points; 
+	private ArrayList<Triple> points; 
 	private int filled, total_ways;
+	private long timer;
 	
 	// Provided grid data for main/testing
 	// The instance variable strategy is up to you.
@@ -51,7 +60,7 @@ public class Sudoku {
 	 "700020006",
 	 "060000280",
 	 "000419005",
-	 "000080089");
+	 "000080079");
 	
 	// Provided hard 3 7 grid
 	// 1 solution this way, 6 solutions if the 7 is changed to 0
@@ -156,7 +165,7 @@ public class Sudoku {
 	// solving hardGrid.
 	public static void main(String[] args) {
 		Sudoku sudoku;
-		sudoku = new Sudoku(mediumGrid);
+		sudoku = new Sudoku(evilGrid);
 		
 		System.out.println(sudoku); // print the raw problem
 		int count = sudoku.solve();
@@ -189,6 +198,7 @@ public class Sudoku {
 			for(int i = 0; i < SIZE; i++) {
 				for(int j = 0; j < SIZE; j++) {
 					if(sudo[i][j] != 0) {
+//						in case we neww to check that given sudoku is correct
 						if(!isCorr(i, j, sudo[i][j]))
 							throw new RuntimeException ("Invalid Puzzle!");
 						filled++;  continue;
@@ -199,14 +209,7 @@ public class Sudoku {
 					if(p.v != 0) points.add(p);
 				}
 			}
-			Collections.sort(points,new Comparator<Triple>() {
-				@Override
-				public int compare(Triple o1, Triple o2) {
-					if(o1.v != o2.v) return o1.v - o2.v;
-					if(o1.x != o2.x) return o1.x - o2.x;
-					return o1.y - o2.y;
-				}
-			} );
+			Collections.sort(points, new SortByValue() );
 		} catch (Exception e) {
 			throw new RuntimeException ("Invalid Puzzle!");
 		}
@@ -247,7 +250,7 @@ public class Sudoku {
 			total_ways++;  return;
 		}
 		Triple bst = points.get(idx); 
-		for(int v = 1; v < 10; v++) {
+		for(int v = 1; v <= SIZE; v++) {
 			if(canBe(bst.x, bst.y, v)) {
 				sudo[bst.x][bst.y] = v;
 				filled++;
@@ -258,7 +261,7 @@ public class Sudoku {
 		}	
 	}
 	
-	//copy the solution, get first solution
+	//get and copy first solution
 	private void copySolution() {
 		for(int i = 0; i < SIZE; i++) {
 			for(int j = 0; j < SIZE; j++) {
