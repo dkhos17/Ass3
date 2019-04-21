@@ -2,7 +2,7 @@ package assign3;
 
 import java.util.*;
 
-import assign3.Sudoku.Triple;
+//import assign3.Sudoku.SuDo;
 //import  javafx.util.*;
 
 
@@ -12,24 +12,77 @@ import assign3.Sudoku.Triple;
  */
 public class Sudoku {
 	
-	public static class Triple {
-        public int x,y,v;
-        Triple(int x, int y, int value){
-        	this.x = x; this.y = y; this.v = value;
-        }
-    }
-	public class SortByValue implements Comparator<Triple> {
-			@Override
-			public int compare(Triple o1, Triple o2) {
-				if(o1.v != o2.v) return o1.v - o2.v;
-				if(o1.x != o2.x) return o1.x - o2.x;
-				return o1.y - o2.y;
+	private static class SuDo {
+		private ArrayList<Triple> points;
+		
+		public SuDo() {
+			points = new ArrayList<Triple>();
+		}
+		//pick value in grid
+		public void fillSudoku(int idx, int val) {
+			Triple tp = points.get(idx);
+			sudo[tp.x][tp.y] = val;
+			filled++;
+		}
+		//unpick value from gird
+		public void unfillSudoku(int idx) {
+			Triple tp = points.get(idx);
+			sudo[tp.x][tp.y] = 0;
+			filled--;
+		}
+		//add points in arraylist (points)
+		public void addPoint(int x, int y, int v) {
+			points.add(new Triple(x,y,v));
+		}
+		//sort arraylist
+		public void sortPoints() {
+			Collections.sort(points, new SortByValue());
+		}
+		//check if this value can be placed in grid
+		public boolean Check(int idx, int val) {
+			Triple tp = points.get(idx);
+			return canBe(tp.x, tp.y, val);
+		}
+		
+		//check value, if it can be placed in (i,j)  
+		public boolean canBe(int x, int y, int val) {
+			if(sudo[x][y] != 0) return false;
+			for(int i = 0; i < SIZE; i++) {
+				if(sudo[x][i] == val) return false;
+				if(sudo[i][y] == val) return false;
+	 		}
+			for(int i = PART*(x/PART); i < PART*(x/PART) + PART; i++) {
+				for(int j = PART*(y/PART); j < PART*(y/PART) + PART; j++) {
+					if(sudo[i][j] == val) return false;
+				}
 			}
-     }
+			return true;
+		}
+
+		//my structure
+		private static class Triple {
+	        public int x,y,v;
+	        Triple(int x, int y, int value){
+	        	this.x = x; this.y = y; this.v = value;
+	        }
+	    }
+		
+		private class SortByValue implements Comparator<Triple> {
+				@Override
+				public int compare(Triple o1, Triple o2) {
+					if(o1.v != o2.v) return o1.v - o2.v;
+					if(o1.x != o2.x) return o1.x - o2.x;
+					return o1.y - o2.y;
+				}
+	     }
+	}
 	
-	private int[][] sudo, sol;
-	private ArrayList<Triple> points; 
-	private int filled, total_ways;
+	
+	private static int[][] sudo;
+	private int[][] sol;
+	private SuDo SuDo;
+	private static int filled;
+	private int total_ways;
 	private long timer;
 	
 	// Provided grid data for main/testing
@@ -183,8 +236,9 @@ public class Sudoku {
 		sudo = ints;
 		sol = new int[SIZE][SIZE];
 		total_ways = filled = 0;
-		points = new ArrayList<Triple>();
+		SuDo = new SuDo();
 		getPoints();
+		SuDo.sortPoints();
 	}
 	
 	public Sudoku(String ints) {
@@ -198,18 +252,17 @@ public class Sudoku {
 			for(int i = 0; i < SIZE; i++) {
 				for(int j = 0; j < SIZE; j++) {
 					if(sudo[i][j] != 0) {
-//						in case we neww to check that given sudoku is correct
+//						in case we want to check that given sudoku is correct
 						if(!isCorr(i, j, sudo[i][j]))
 							throw new RuntimeException ("Invalid Puzzle!");
 						filled++;  continue;
 					}
-					Triple p = new Triple(i,j,0);
+					int cnt = 0;
 					for(int v = 1; v < 10; v++) 
-						if(canBe(i, j, v)) p.v++;
-					if(p.v != 0) points.add(p);
+						if(SuDo.canBe(i, j, v)) cnt++;
+					if(cnt != 0) SuDo.addPoint(i,j,cnt);
 				}
 			}
-			Collections.sort(points, new SortByValue() );
 		} catch (Exception e) {
 			throw new RuntimeException ("Invalid Puzzle!");
 		}
@@ -236,7 +289,7 @@ public class Sudoku {
 	 * Solves the puzzle, invoking the underlying recursive search.
 	 */
 	public int solve() {
-		if(filled + points.size() != SIZE*SIZE) return 0;
+//		if(filled + points.size() != SIZE*SIZE) return 0;
 		timer = -System.currentTimeMillis();
 		solveSudoku(0);
 		timer += System.currentTimeMillis();
@@ -249,14 +302,11 @@ public class Sudoku {
 			if(total_ways == 0) copySolution();
 			total_ways++;  return;
 		}
-		Triple bst = points.get(idx); 
 		for(int v = 1; v <= SIZE; v++) {
-			if(canBe(bst.x, bst.y, v)) {
-				sudo[bst.x][bst.y] = v;
-				filled++;
+			if(SuDo.Check(idx, v)) {
+				SuDo.fillSudoku(idx, v);
 				solveSudoku(idx+1);
-				sudo[bst.x][bst.y] = 0;
-				--filled;
+				SuDo.unfillSudoku(idx);
 			}
 		}	
 	}
@@ -267,24 +317,10 @@ public class Sudoku {
 			for(int j = 0; j < SIZE; j++) {
 				sol[i][j] = sudo[i][j];
 			}
+			//System.arraycopy(sudo[i],0,sol[i],0,SIZE);
 		}
 	}
-
-	//check val if it can be placed in (i,j)  
-	private boolean canBe(int x, int y, int val) {
-		if(sudo[x][y] != 0) return false;
-		for(int i = 0; i < SIZE; i++) {
-			if(sudo[x][i] == val) return false;
-			if(sudo[i][y] == val) return false;
- 		}
-		for(int i = PART*(x/PART); i < PART*(x/PART) + PART; i++) {
-			for(int j = PART*(y/PART); j < PART*(y/PART) + PART; j++) {
-				if(sudo[i][j] == val) return false;
-			}
-		}
-		return true;
-	}
-	
+		
 
 	
 	public String getSolutionText() {

@@ -11,7 +11,6 @@ import java.awt.event.*;
 
  public class SudokuFrame extends JFrame {
 	
-//	 private static int Width = 1200, Height = 1000;
 	 private JTextArea puzzText, solText; 
 	 private JCheckBox AutoCheck;
 	 private JButton Check;
